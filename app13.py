@@ -340,24 +340,27 @@ def convert_pdf_to_images(pdf_file):
 
 # Замените существующую функцию display_pdf на эту
 def display_pdf(pdf_file):
-    try:
-        # Попробуем отобразить PDF через iframe (работает локально и в Firefox)
-        pdf_file.seek(0)
-        base64_pdf = base64.b64encode(pdf_file.read()).decode("utf-8")
-        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600px" type="application/pdf"></iframe>'
-        st.markdown(pdf_display, unsafe_allow_html=True)
-    except Exception as e:
-        st.warning(f"Не удалось отобразить PDF напрямую: {e}")
-        st.info("Конвертируем PDF в изображения для отображения...")
-        
-        # Если не получилось отобразить PDF напрямую, конвертируем его в изображения
-        images = convert_pdf_to_images(pdf_file)
-        if images:
-            for i, img in enumerate(images):
-                st.write(f"Страница {i+1}")
-                st.image(img, use_column_width=True)
+    # Пробуем использовать преобразование в изображения вместо прямого отображения PDF
+    images = convert_pdf_to_images(pdf_file)
+    if images:
+        # Создаем вкладки для каждой страницы PDF
+        if len(images) > 1:
+            tabs = st.tabs([f"Страница {i+1}" for i in range(len(images))])
+            for i, tab in enumerate(tabs):
+                with tab:
+                    st.image(images[i], use_column_width=True)
         else:
-            st.error("Не удалось преобразовать PDF в изображения")
+            # Если только одна страница, просто показываем ее
+            st.image(images[0], use_column_width=True)
+    else:
+        # Если конвертация не удалась, пробуем старый способ (для локального тестирования)
+        try:
+            pdf_file.seek(0)
+            base64_pdf = base64.b64encode(pdf_file.read()).decode("utf-8")
+            pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600px" type="application/pdf"></iframe>'
+            st.markdown(pdf_display, unsafe_allow_html=True)
+        except Exception as e:
+            st.error(f"Не удалось отобразить PDF: {e}")
 
 def extract_resume_info(text):
     info = {
