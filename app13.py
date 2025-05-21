@@ -328,56 +328,36 @@ def extract_text_from_pdf(pdf_file):
 def convert_pdf_to_images(pdf_file):
     try:
         pdf_file.seek(0)
+        # Значительно уменьшаем DPI для получения изображений меньшего размера
+        # Чем меньше DPI, тем меньше будет текст
         images = pdf2image.convert_from_bytes(
             pdf_file.read(),
-            dpi=150,
-            fmt='jpeg'
+            dpi=72,  # Уменьшаем DPI до 72 (стандартное разрешение экрана)
+            fmt='jpeg',
+            size=(800, None)  # Ограничиваем ширину изображения 800 пикселями
         )
         return images
     except Exception as e:
         st.error(f"Ошибка при конвертации PDF в изображения: {e}")
         return None
 
-# Замените существующую функцию display_pdf на эту
 def display_pdf(pdf_file):
-    # Пробуем использовать преобразование в изображения вместо прямого отображения PDF
     images = convert_pdf_to_images(pdf_file)
     if images:
-        # Добавляем CSS для управления стилями отображения
-        st.markdown("""
-        <style>
-            .stImage img {
-                max-width: 100% !important;
-                height: auto !important;
-            }
-            .stTab [data-baseweb="tab-list"] button {
-                font-size: 0.8rem;
-                padding: 5px 10px;
-            }
-            .stTab [data-baseweb="tab-list"] {
-                gap: 5px;
-            }
-            /* Уменьшаем размер текста в PDF */
-            .pdf-text {
-                font-size: 0.9rem;
-                line-height: 1.2;
-            }
-        </style>
-        """, unsafe_allow_html=True)
-        
         # Создаем вкладки для каждой страницы PDF
         if len(images) > 1:
             tabs = st.tabs([f"Стр. {i+1}" for i in range(len(images))])
             for i, tab in enumerate(tabs):
                 with tab:
-                    # Уменьшаем размер изображения, чтобы текст был меньше
-                    # При необходимости можно уменьшить DPI в функции convert_pdf_to_images
-                    st.image(images[i], use_container_width=True)
+                    # Создаем изображение с явным контролем размера
+                    img_resized = images[i].resize((800, int(800 * images[i].height / images[i].width)))
+                    st.image(img_resized, use_container_width=True)
         else:
-            # Если только одна страница, просто показываем ее
-            st.image(images[0], use_container_width=True)
+            # Если только одна страница, просто показываем ее с уменьшенным размером
+            img_resized = images[0].resize((800, int(800 * images[0].height / images[0].width)))
+            st.image(img_resized, use_container_width=True)
     else:
-        # Если конвертация не удалась, пробуем старый способ (для локального тестирования)
+        # Запасной вариант
         try:
             pdf_file.seek(0)
             base64_pdf = base64.b64encode(pdf_file.read()).decode("utf-8")
