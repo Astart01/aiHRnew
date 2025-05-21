@@ -343,15 +343,39 @@ def display_pdf(pdf_file):
     # Пробуем использовать преобразование в изображения вместо прямого отображения PDF
     images = convert_pdf_to_images(pdf_file)
     if images:
+        # Добавляем CSS для управления стилями отображения
+        st.markdown("""
+        <style>
+            .stImage img {
+                max-width: 100% !important;
+                height: auto !important;
+            }
+            .stTab [data-baseweb="tab-list"] button {
+                font-size: 0.8rem;
+                padding: 5px 10px;
+            }
+            .stTab [data-baseweb="tab-list"] {
+                gap: 5px;
+            }
+            /* Уменьшаем размер текста в PDF */
+            .pdf-text {
+                font-size: 0.9rem;
+                line-height: 1.2;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+        
         # Создаем вкладки для каждой страницы PDF
         if len(images) > 1:
-            tabs = st.tabs([f"Страница {i+1}" for i in range(len(images))])
+            tabs = st.tabs([f"Стр. {i+1}" for i in range(len(images))])
             for i, tab in enumerate(tabs):
                 with tab:
+                    # Уменьшаем размер изображения, чтобы текст был меньше
+                    # При необходимости можно уменьшить DPI в функции convert_pdf_to_images
                     st.image(images[i], use_container_width=True)
         else:
             # Если только одна страница, просто показываем ее
-            st.image(images[0], use_column_width=True)
+            st.image(images[0], use_container_width=True)
     else:
         # Если конвертация не удалась, пробуем старый способ (для локального тестирования)
         try:
