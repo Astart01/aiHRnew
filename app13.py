@@ -603,8 +603,12 @@ def main_app():
                 r["Комментарий"], is_red_flag = get_detailed_comment(r["raw_text"], r["prediction_class"], r["raw_proba"])
         
         result_df = pd.DataFrame(st.session_state.results)
+        
+        # Добавляем сортировку по вероятности (от высокой к низкой)
+        result_df = result_df.sort_values(by="raw_proba", ascending=False)
+        
         result_df["Файл"] = result_df["Файл"].str.replace('.pdf', '', regex=False)
-        result_df["Вероятность класса 1"] = result_df["Вероятность класса 1"].astype(float).map("{:.2f}".format)
+        result_df["Вероятность класса 1"] = result_df["raw_proba"].astype(float).map("{:.2f}".format)
         result_df["Зарплата"] = result_df["Зарплата"].apply(lambda x: f"{int(x):,}".replace(',', ' ') if str(x).isdigit() else x)
         
         # Создаем контейнер для результатов
