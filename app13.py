@@ -348,7 +348,7 @@ def display_pdf(pdf_file):
             tabs = st.tabs([f"Страница {i+1}" for i in range(len(images))])
             for i, tab in enumerate(tabs):
                 with tab:
-                    st.image(images[i], use_column_width=True)
+                    st.image(images[i], use_container_width=True)
         else:
             # Если только одна страница, просто показываем ее
             st.image(images[0], use_column_width=True)
