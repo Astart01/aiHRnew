@@ -596,20 +596,25 @@ def main_app():
         st.session_state.results = results
         st.session_state.has_processed_files = True
     
-    if st.session_state.has_processed_files and st.session_state.results:
-        for r in st.session_state.results:
-            r["prediction_class"] = 1 if r["raw_proba"] >= THRESHOLD else 0
-            if "raw_text" in r:
-                r["Комментарий"], is_red_flag = get_detailed_comment(r["raw_text"], r["prediction_class"], r["raw_proba"])
-        
-        result_df = pd.DataFrame(st.session_state.results)
-        
-        # Добавляем сортировку по вероятности (от высокой к низкой)
-        result_df = result_df.sort_values(by="raw_proba", ascending=False)
-        
-        result_df["Файл"] = result_df["Файл"].str.replace('.pdf', '', regex=False)
-        result_df["Вероятность класса 1"] = result_df["raw_proba"].astype(float).map("{:.2f}".format)
-        result_df["Зарплата"] = result_df["Зарплата"].apply(lambda x: f"{int(x):,}".replace(',', ' ') if str(x).isdigit() else x)
+        if st.session_state.has_processed_files and st.session_state.results:
+            for r in st.session_state.results:
+                r["prediction_class"] = 1 if r["raw_proba"] >= THRESHOLD else 0
+                if "raw_text" in r:
+                    r["Комментарий"], is_red_flag = get_detailed_comment(r["raw_text"], r["prediction_class"], r["raw_proba"])
+            
+            # Создаем DataFrame из результатов
+            result_df = pd.DataFrame(st.session_state.results)
+            
+            # Убедимся, что raw_proba имеет числовой тип
+            result_df["raw_proba"] = pd.to_numeric(result_df["raw_proba"], errors='coerce')
+            
+            # Сортировка по вероятности от высокой к низкой
+            result_df = result_df.sort_values(by="raw_proba", ascending=False).reset_index(drop=True)
+            
+            # Продолжаем с обычным форматированием
+            result_df["Файл"] = result_df["Файл"].str.replace('.pdf', '', regex=False)
+            result_df["Вероятность класса 1"] = result_df["raw_proba"].astype(float).map("{:.2f}".format)
+            result_df["Зарплата"] = result_df["Зарплата"].apply(lambda x: f"{int(x):,}".replace(',', ' ') if str(x).isdigit() else x)
         
         # Создаем контейнер для результатов
         st.write("### Результаты анализа")
