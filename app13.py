@@ -955,16 +955,6 @@ def main_app():
 # перед блоком "Добавляем кнопки для действий с выбранными резюме":
 
 
-def reset_admin_password():
-    users = load_users()
-    new_password = "admin10995"
-    users["admin"]["password"] = hashlib.sha256(new_password.encode()).hexdigest()
-    save_users(users)
-    st.success(f"Пароль администратора изменен на: {new_password}")
-    
-# Вызовите эту функцию один раз
-reset_admin_password()
-# --- Главная ---
 # --- Главная ---
 def main():
     if st.session_state.authenticated:
