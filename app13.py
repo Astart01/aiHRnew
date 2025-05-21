@@ -698,29 +698,30 @@ def main_app():
             row_cols[8].markdown(f'<div style="background-color:{bg_color}; padding:5px; overflow-wrap: break-word;">{comment}</div>', unsafe_allow_html=True)
             
             # Кнопка PDF
-            row_cols[9].markdown(f"""
-            <style>
-                div[data-testid="stButton"] > button {{
-                    background-color: transparent;
-                    color: #FF0000;
-                    font-size: 12px;
-                    padding: 1px 6px;
-                    border: 1px solid #FF0000;
-                    border-radius: 4px;
-                    width: 80%;
-                    height: auto;
-                    margin: 0 auto;
-                    display: block;
-                }}
-            </style>
-            """, unsafe_allow_html=True)
-            if row_cols[9].button("PDF", key=f"pdf_{idx}", help="Просмотр резюме"):
-                # Найдем имя файла в processed_files
-                file_name = row["Файл"] + ".pdf" if not row["Файл"].endswith(".pdf") else row["Файл"]
-                if file_name in st.session_state.processed_files:
-                    file_data = st.session_state.processed_files[file_name]["file"]
-                    st.session_state.selected_pdf = {"file": file_data, "name": file_name}
-                    st.rerun()  # Перезагрузить страницу для отображения PDF
+# Кнопка PDF
+        row_cols[9].markdown(f"""
+        <style>
+            div[data-testid="stButton"] > button {{
+                background-color: transparent;
+                color: #FF0000;
+                font-size: 12px;
+                padding: 1px 6px;
+                border: 1px solid #FF0000;
+                border-radius: 4px;
+                width: 80%;
+                height: auto;
+                margin: 0 auto;
+                display: block;
+            }}
+        </style>
+        """, unsafe_allow_html=True)
+        if row_cols[9].button("PDF", key=f"pdf_{idx}", help="Просмотр резюме"):
+            # Найдем имя файла в processed_files
+            file_name = row["Файл"] + ".pdf" if not row["Файл"].endswith(".pdf") else row["Файл"]
+            if file_name in st.session_state.processed_files:
+                file_data = st.session_state.processed_files[file_name]["file"]
+                st.session_state.selected_pdf = {"file": file_data, "name": file_name}
+                st.rerun()  # Перезагрузить страницу для отображения PDF
         
 
         # Создаем буфер для Excel файла
