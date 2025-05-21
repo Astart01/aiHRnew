@@ -525,7 +525,7 @@ def login_page():
             else:
                 st.error("Неверный логин или пароль")
 
-# --- Основное приложение ---
+
 def main_app():
     model, scaler, tfidf = load_model()
     st.title("Классификация резюме менеджеров по продажам")
@@ -595,27 +595,29 @@ def main_app():
                 })
         st.session_state.results = results
         st.session_state.has_processed_files = True
+        st.rerun()  # Перезагружаем страницу после обработки файлов
     
-        if st.session_state.has_processed_files and st.session_state.results:
-            for r in st.session_state.results:
-                r["prediction_class"] = 1 if r["raw_proba"] >= THRESHOLD else 0
-                if "raw_text" in r:
-                    r["Комментарий"], is_red_flag = get_detailed_comment(r["raw_text"], r["prediction_class"], r["raw_proba"])
-            
-            # Создаем DataFrame из результатов
-            result_df = pd.DataFrame(st.session_state.results)
-            
-            # Убедимся, что raw_proba имеет числовой тип
-            result_df["raw_proba"] = pd.to_numeric(result_df["raw_proba"], errors='coerce')
-            
-            # Сортировка по вероятности от высокой к низкой
-            result_df = result_df.sort_values(by="raw_proba", ascending=False).reset_index(drop=True)
-            
-            # Продолжаем с обычным форматированием
-            result_df["Файл"] = result_df["Файл"].str.replace('.pdf', '', regex=False)
-            result_df["Вероятность класса 1"] = result_df["raw_proba"].astype(float).map("{:.2f}".format)
-            result_df["Зарплата"] = result_df["Зарплата"].apply(lambda x: f"{int(x):,}".replace(',', ' ') if str(x).isdigit() else x)
+    # Этот блок должен быть вне условия обработки файлов, чтобы выполняться при каждой загрузке страницы
+    if st.session_state.has_processed_files and st.session_state.results:
+        for r in st.session_state.results:
+            r["prediction_class"] = 1 if r["raw_proba"] >= THRESHOLD else 0
+            if "raw_text" in r:
+                r["Комментарий"], is_red_flag = get_detailed_comment(r["raw_text"], r["prediction_class"], r["raw_proba"])
         
+        # Создаем DataFrame из результатов
+        result_df = pd.DataFrame(st.session_state.results)
+        
+        # Убедимся, что raw_proba имеет числовой тип
+        result_df["raw_proba"] = pd.to_numeric(result_df["raw_proba"], errors='coerce')
+        
+        # Сортировка по вероятности от высокой к низкой
+        result_df = result_df.sort_values(by="raw_proba", ascending=False).reset_index(drop=True)
+        
+        # Продолжаем с обычным форматированием
+        result_df["Файл"] = result_df["Файл"].str.replace('.pdf', '', regex=False)
+        result_df["Вероятность класса 1"] = result_df["raw_proba"].astype(float).map("{:.2f}".format)
+        result_df["Зарплата"] = result_df["Зарплата"].apply(lambda x: f"{int(x):,}".replace(',', ' ') if str(x).isdigit() else x)
+    
         # Создаем контейнер для результатов
         st.write("### Результаты анализа")
     
@@ -698,32 +700,30 @@ def main_app():
             row_cols[8].markdown(f'<div style="background-color:{bg_color}; padding:5px; overflow-wrap: break-word;">{comment}</div>', unsafe_allow_html=True)
             
             # Кнопка PDF
-# Кнопка PDF
-        row_cols[9].markdown(f"""
-        <style>
-            div[data-testid="stButton"] > button {{
-                background-color: transparent;
-                color: #FF0000;
-                font-size: 12px;
-                padding: 1px 6px;
-                border: 1px solid #FF0000;
-                border-radius: 4px;
-                width: 80%;
-                height: auto;
-                margin: 0 auto;
-                display: block;
-            }}
-        </style>
-        """, unsafe_allow_html=True)
-        if row_cols[9].button("PDF", key=f"pdf_{idx}", help="Просмотр резюме"):
-            # Найдем имя файла в processed_files
-            file_name = row["Файл"] + ".pdf" if not row["Файл"].endswith(".pdf") else row["Файл"]
-            if file_name in st.session_state.processed_files:
-                file_data = st.session_state.processed_files[file_name]["file"]
-                st.session_state.selected_pdf = {"file": file_data, "name": file_name}
-                st.rerun()  # Перезагрузить страницу для отображения PDF
+            row_cols[9].markdown(f"""
+            <style>
+                div[data-testid="stButton"] > button {{
+                    background-color: transparent;
+                    color: #FF0000;
+                    font-size: 12px;
+                    padding: 1px 6px;
+                    border: 1px solid #FF0000;
+                    border-radius: 4px;
+                    width: 80%;
+                    height: auto;
+                    margin: 0 auto;
+                    display: block;
+                }}
+            </style>
+            """, unsafe_allow_html=True)
+            if row_cols[9].button("PDF", key=f"pdf_{idx}", help="Просмотр резюме"):
+                # Найдем имя файла в processed_files
+                file_name = row["Файл"] + ".pdf" if not row["Файл"].endswith(".pdf") else row["Файл"]
+                if file_name in st.session_state.processed_files:
+                    file_data = st.session_state.processed_files[file_name]["file"]
+                    st.session_state.selected_pdf = {"file": file_data, "name": file_name}
+                    st.rerun()  # Перезагрузить страницу для отображения PDF
         
-
         # Создаем буфер для Excel файла
         buffer = io.BytesIO()
 
@@ -816,8 +816,6 @@ def main_app():
             st.session_state.results = []
             st.session_state.has_processed_files = False
             st.session_state.selected_rows = set()
-
-
                 
             # Сообщение об успешной очистке
             st.success("Все резюме успешно очищены!")
@@ -867,34 +865,34 @@ def main_app():
                 success = send_to_amocrm()
                 if success:
                     st.success("Данные успешно отправлены в AmoCRM!")
+    
+    # Если выбран PDF для просмотра, отображаем его
+    if hasattr(st.session_state, 'selected_pdf') and st.session_state.selected_pdf:
+        st.divider()
+        st.subheader(f"📄 Просмотр: {st.session_state.selected_pdf['name']}")
+        display_pdf(st.session_state.selected_pdf['file'])
         
-        # Если выбран PDF для просмотра, отображаем его
-        if hasattr(st.session_state, 'selected_pdf') and st.session_state.selected_pdf:
-            st.divider()
-            st.subheader(f"📄 Просмотр: {st.session_state.selected_pdf['name']}")
-            display_pdf(st.session_state.selected_pdf['file'])
-            
-            # Информация о кандидате
-            file_name = st.session_state.selected_pdf['name']
-            raw_text = st.session_state.processed_files[file_name]["raw_text"]
-            info = extract_resume_info(raw_text)
-            info_df = pd.DataFrame({
-                "Поле": ["Телефон", "Должность", "Город", "Возраст", "Пол", "Зарплата"],
-                "Значение": [
-                    info["phone"], 
-                    info["position"], 
-                    info["city"], 
-                    info["age"], 
-                    info["gender"],
-                    info["salary"]
-                ]
-            })
-            st.table(info_df)
-            
-            # Кнопка закрыть просмотр PDF
-            if st.button("Закрыть просмотр PDF"):
-                del st.session_state.selected_pdf
-                st.rerun()
+        # Информация о кандидате
+        file_name = st.session_state.selected_pdf['name']
+        raw_text = st.session_state.processed_files[file_name]["raw_text"]
+        info = extract_resume_info(raw_text)
+        info_df = pd.DataFrame({
+            "Поле": ["Телефон", "Должность", "Город", "Возраст", "Пол", "Зарплата"],
+            "Значение": [
+                info["phone"], 
+                info["position"], 
+                info["city"], 
+                info["age"], 
+                info["gender"],
+                info["salary"]
+            ]
+        })
+        st.table(info_df)
+        
+        # Кнопка закрыть просмотр PDF
+        if st.button("Закрыть просмотр PDF"):
+            del st.session_state.selected_pdf
+            st.rerun()
     else:
         if uploaded_files:
             st.info("Нажмите кнопку 'Обработать файлы' для анализа резюме.")
@@ -960,9 +958,6 @@ def main_app():
             except Exception as e:
                 st.error(f"Ошибка при загрузке резюме с почты: {e}")
                 st.info("Убедитесь, что файл pochtalion.py находится в той же директории и содержит функцию download_pdfs")
-# --- Главная ---
-# В функции main_app(), после отображения таблицы резюме и 
-# перед блоком "Добавляем кнопки для действий с выбранными резюме":
 
 
 # --- Главная ---
